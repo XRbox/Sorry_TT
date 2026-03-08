@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>For Atom</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Kanit:wght@300;600&display=swap');
+
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            background-color: black;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-family: 'Kanit', sans-serif;
+            overflow: hidden;
+            color: white;
+        }
+
+        canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            z-index: 1;
+        }
+
+        #display-container {
+            position: relative;
+            z-index: 10;
+            text-align: center;
+            width: 100%;
+        }
+
+        /* ตัวเลขและข้อความที่จะเปลี่ยนที่จุดเดิม */
+        #main-text {
+            font-size: 5rem;
+            font-weight: bold;
+            color: #ff3385;
+            text-shadow: 0 0 20px #ff3385;
+            /* ปรับ transition ให้คุมทั้ง opacity และ transform */
+            transition: opacity 0.4s ease-in-out, transform 0.4s ease-in-out; 
+            display: inline-block;
+            min-height: 1.2em;
+            opacity: 1; /* เริ่มต้นให้เห็นเลข 3 */
+            transform: scale(1);
+        }
+        /* ตัวเลขตอนนับถอยหลังให้ใหญ่พิเศษ */
+        .is-number {
+            font-size: 12rem !important;
+        }
+
+        /* ปุ่มกดถัดไป */
+        #next-btn {
+            background-color: #ff3385;
+            color: white;
+            border: none;
+            padding: 12px 35px;
+            font-size: 1.4rem;
+            border-radius: 50px;
+            cursor: pointer;
+            margin-top: 40px;
+            opacity: 0;
+            display: block;
+            margin-left: auto;
+            margin-right: auto;
+            transition: opacity 1s ease;
+            box-shadow: 0 0 15px rgba(255, 51, 133, 0.4);
+            pointer-events: none;
+        }
+
+        #next-btn.show {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        /* คลาสสำหรับทำแอนิเมชันตอนเปลี่ยนคำ */
+        .fade-out {
+            opacity: 0;
+            transform: scale(0.8);
+        }
+
+        .fade-in {
+            opacity: 1;
+            transform: scale(1);
+        }
+    </style>
+</head>
+<body>
+
+    <canvas id="matrix"></canvas>
+
+    <div id="display-container">
+        <div id="main-text" class="is-number">3</div>
+        <button id="next-btn" onclick="nextPage()">กดตรงนี้เพื่อดูต่อ</button>
+    </div>
+
+    <script>
+        // --- Matrix Effect (คงเดิม) ---
+        const canvas = document.getElementById('matrix');
+        const ctx = canvas.getContext('2d');
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+        const letters = "SORRYATOMKODKOD123456789";
+        const fontSize = 16;
+        const columns = canvas.width / fontSize;
+        const drops = [];
+        for (let i = 0; i < columns; i++) { drops[i] = Math.random() * -100; }
+        function drawMatrix() {
+            ctx.fillStyle = "rgba(0, 0, 0, 0.08)"; 
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = "#ff3385"; 
+            ctx.font = fontSize + "px monospace";
+            for (let i = 0; i < drops.length; i++) {
+                const text = letters.charAt(Math.floor(Math.random() * letters.length));
+                if (drops[i] > 0) ctx.fillText(text, i * fontSize, drops[i] * fontSize);
+                if (drops[i] * fontSize > canvas.height && Math.random() > 0.975) drops[i] = 0;
+                drops[i] += 0.8;
+            }
+        }
+        setInterval(drawMatrix, 35);
+
+        // --- ระบบเปลี่ยนข้อความกลางจอ ---
+        const mainText = document.getElementById('main-text');
+        const nextBtn = document.getElementById('next-btn');
+
+        const sequence = [
+            { text: "2", isNum: true, delay: 1300 },
+            { text: "1", isNum: true, delay: 1300 },
+            { text: "ขอโทษนะ", isNum: false, delay: 1300 },
+            { text: "เค้ามาง้ออะตอม", isNum: false, delay: 1300 },
+            { text: "กอดๆๆๆ ❤️", isNum: false, delay: 1500 }
+        ];
+
+        let step = 0;
+
+        function updateText() {
+            if (step < sequence.length) {
+                const current = sequence[step];
+
+                // 1. สั่งให้จางออกก่อน (ใช้เวลา 0.4 วินาทีตาม CSS)
+                mainText.style.opacity = "0";
+                mainText.style.transform = "scale(0.8)";
+
+                setTimeout(() => {
+                    // 2. เปลี่ยนข้อความข้างในขณะที่จอมืดอยู่
+                    mainText.innerText = current.text;
+                    
+                    if (current.isNum) {
+                        mainText.classList.add('is-number');
+                    } else {
+                        mainText.classList.remove('is-number');
+                    }
+
+                    // 3. สั่งให้จางกลับเข้ามา (Transition จะทำงานอัตโนมัติ)
+                    mainText.style.opacity = "1";
+                    mainText.style.transform = "scale(1)";
+
+                    // ถ้าเป็นคำสุดท้าย ให้รอโชว์ปุ่ม
+                    if (step === sequence.length - 1) {
+                        setTimeout(() => {
+                            nextBtn.classList.add('show');
+                        }, 1500);
+                    }
+
+                    step++;
+                    
+                    // รอจนกว่าจะถึงเวลา Delay ของคำนั้นๆ แล้วค่อยเปลี่ยนคำถัดไป
+                    if (step < sequence.length) {
+                        setTimeout(updateText, current.delay);
+                    }
+                }, 400); // เวลานี้ต้องสัมพันธ์กับค่า transition ใน CSS
+            }
+        }
+
+        // เริ่มทำงาน
+        setTimeout(updateText, 1300);
+        function nextPage() {
+            window.location.href = "page2.html";
+        }
+    </script>
+</body>
+</html> 
